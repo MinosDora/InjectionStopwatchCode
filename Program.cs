@@ -40,11 +40,14 @@ class Program
                                 {
                                     iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Ldloc_S, variableDefinition));
                                     iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Callvirt, moduleDefinition.ImportReference(typeof(Stopwatch).GetMethod("Stop"))));
+
+                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Ldstr, $"{method.FullName} run time: "));
                                     iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Ldloc_S, variableDefinition));
                                     iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Callvirt, moduleDefinition.ImportReference(typeof(Stopwatch).GetMethod("get_ElapsedMilliseconds"))));
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Call, moduleDefinition.ImportReference(typeof(Console).GetMethod("WriteLine", new Type[] { typeof(int) }))));
+                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Box, moduleDefinition.ImportReference(typeof(long))));
+                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Call, moduleDefinition.ImportReference(typeof(string).GetMethod("Concat", new Type[] { typeof(object), typeof(object) }))));
+                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Call, moduleDefinition.ImportReference(typeof(Console).GetMethod("WriteLine", new Type[] { typeof(string) }))));
                                 }
-                                method.Resolve();
                             }
                         }
                     }
