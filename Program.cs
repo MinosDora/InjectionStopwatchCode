@@ -30,23 +30,24 @@ class Program
                                 TypeReference stopWatchType = moduleDefinition.ImportReference(typeof(Stopwatch));
                                 VariableDefinition variableDefinition = new VariableDefinition(stopWatchType);
                                 method.Body.Variables.Add(variableDefinition);
-                                Instruction instruction = method.Body.Instructions.First();
-                                iLProcessor.InsertBefore(instruction, iLProcessor.Create(OpCodes.Newobj, moduleDefinition.ImportReference(typeof(Stopwatch).GetConstructor(new Type[] { }))));
-                                iLProcessor.InsertBefore(instruction, iLProcessor.Create(OpCodes.Stloc_S, variableDefinition));
-                                iLProcessor.InsertBefore(instruction, iLProcessor.Create(OpCodes.Ldloc_S, variableDefinition));
-                                iLProcessor.InsertBefore(instruction, iLProcessor.Create(OpCodes.Callvirt, moduleDefinition.ImportReference(typeof(Stopwatch).GetMethod("Start"))));
-                                Instruction[] returnMethods = method.Body.Instructions.Where(item => item.OpCode == OpCodes.Ret).ToArray();  //因为不能在foreach循环中修改Instructions的值，所以这里使用数组缓存并遍历修改
-                                for (int j = 0; j < returnMethods.Length; j++)
+                                Instruction firstInstruction = method.Body.Instructions.First();
+                                iLProcessor.InsertBefore(firstInstruction, iLProcessor.Create(OpCodes.Newobj, moduleDefinition.ImportReference(typeof(Stopwatch).GetConstructor(new Type[] { }))));
+                                iLProcessor.InsertBefore(firstInstruction, iLProcessor.Create(OpCodes.Stloc_S, variableDefinition));
+                                iLProcessor.InsertBefore(firstInstruction, iLProcessor.Create(OpCodes.Ldloc_S, variableDefinition));
+                                iLProcessor.InsertBefore(firstInstruction, iLProcessor.Create(OpCodes.Callvirt, moduleDefinition.ImportReference(typeof(Stopwatch).GetMethod("Start"))));
+                                Instruction[] returnInstructions = method.Body.Instructions.Where(item => item.OpCode == OpCodes.Ret).ToArray();  //因为不能在foreach循环中修改Instructions的值，所以这里使用数组缓存并遍历修改
+                                for (int j = 0; j < returnInstructions.Length; j++)
                                 {
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Ldloc_S, variableDefinition));
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Callvirt, moduleDefinition.ImportReference(typeof(Stopwatch).GetMethod("Stop"))));
+                                    Instruction returnInstruction = returnInstructions[j];
+                                    iLProcessor.InsertBefore(returnInstruction, iLProcessor.Create(OpCodes.Ldloc_S, variableDefinition));
+                                    iLProcessor.InsertBefore(returnInstruction, iLProcessor.Create(OpCodes.Callvirt, moduleDefinition.ImportReference(typeof(Stopwatch).GetMethod("Stop"))));
 
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Ldstr, $"{method.FullName} run time: "));
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Ldloc_S, variableDefinition));
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Callvirt, moduleDefinition.ImportReference(typeof(Stopwatch).GetMethod("get_ElapsedMilliseconds"))));
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Box, moduleDefinition.ImportReference(typeof(long))));
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Call, moduleDefinition.ImportReference(typeof(string).GetMethod("Concat", new Type[] { typeof(object), typeof(object) }))));
-                                    iLProcessor.InsertBefore(returnMethods[j], iLProcessor.Create(OpCodes.Call, moduleDefinition.ImportReference(typeof(Console).GetMethod("WriteLine", new Type[] { typeof(string) }))));
+                                    iLProcessor.InsertBefore(returnInstruction, iLProcessor.Create(OpCodes.Ldstr, $"{method.FullName} run time: "));
+                                    iLProcessor.InsertBefore(returnInstruction, iLProcessor.Create(OpCodes.Ldloc_S, variableDefinition));
+                                    iLProcessor.InsertBefore(returnInstruction, iLProcessor.Create(OpCodes.Callvirt, moduleDefinition.ImportReference(typeof(Stopwatch).GetMethod("get_ElapsedMilliseconds"))));
+                                    iLProcessor.InsertBefore(returnInstruction, iLProcessor.Create(OpCodes.Box, moduleDefinition.ImportReference(typeof(long))));
+                                    iLProcessor.InsertBefore(returnInstruction, iLProcessor.Create(OpCodes.Call, moduleDefinition.ImportReference(typeof(string).GetMethod("Concat", new Type[] { typeof(object), typeof(object) }))));
+                                    iLProcessor.InsertBefore(returnInstruction, iLProcessor.Create(OpCodes.Call, moduleDefinition.ImportReference(typeof(Console).GetMethod("WriteLine", new Type[] { typeof(string) }))));
                                 }
                             }
                         }
@@ -60,6 +61,7 @@ class Program
                 string writeFilePath = Path.Combine(fileInfo.Directory.FullName, frontName + "_inject" + backName);
                 assemblyDefinition.Write(writeFilePath);
                 Console.WriteLine($"Success! Output path: {writeFilePath}");
+                fileStream.Dispose();
             }
         }
         Console.Read();
